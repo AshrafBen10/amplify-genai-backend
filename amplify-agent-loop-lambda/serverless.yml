@@ -8,9 +8,7 @@ package:
     - venv/**
 
 plugins:
-  - serverless-offline
   - serverless-prune-plugin
-  - serverless-cloudformation-changesets
   - serverless-python-requirements
 
 custom:

@@ -8,10 +8,8 @@ package:
     - venv/**
 
 plugins:
-  - serverless-offline
   - serverless-python-requirements
   - serverless-prune-plugin
-  - serverless-cloudformation-changesets-v3
 custom:
   pythonRequirements:
     dockerizePip: true
@@ -45,7 +43,7 @@ provider:
     API_KEYS_DYNAMODB_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-object-access-${sls:stage}-api-keys
     ACCOUNTS_DYNAMO_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-lambda-${sls:stage}-accounts
     COST_CALCULATIONS_DYNAMO_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-lambda-${sls:stage}-cost-calculations
-    S3_API_DOCUMENTATION_BUCKET: ${self:service}-${sls:stage}-documentation-bucket
+    S3_API_DOCUMENTATION_BUCKET: ${self:service}-${sls:stage}-documentation-bucket-651868767172
     LAMBDA_API_IAM_POLICY_NAME: ${self:service}-${sls:stage}-iam-policy
     IDP_PREFIX: ${self:custom.stageVars.IDP_PREFIX}
     API_BASE_URL: https://${self:custom.stageVars.CUSTOM_API_DOMAIN}
@@ -186,7 +184,21 @@ resources:
                 - s3:ListBucket
               Resource:
                 - "arn:aws:s3:::${self:provider.environment.S3_API_DOCUMENTATION_BUCKET}"
-                - "arn:aws:s3:::${self:provider.environment.S3_API_DOCUMENTATION_BUCKET}/*"   
+                - "arn:aws:s3:::${self:provider.environment.S3_API_DOCUMENTATION_BUCKET}/*"
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeAgent
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - "arn:aws:secretsmanager:${aws:region}:*:secret:app_secrets*"
+                - "arn:aws:secretsmanager:${aws:region}:*:secret:app_envs*"
+                - "arn:aws:secretsmanager:${aws:region}:*:secret:openai_api_key*"
+                - "arn:aws:secretsmanager:${aws:region}:*:secret:openai_endpoints*"   
     APIDocumentBucket:
         Type: 'AWS::S3::Bucket'
         Properties:

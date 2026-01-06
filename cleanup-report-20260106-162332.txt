@@ -1,0 +1,21 @@
+Amplify GenAI Pre-Commit Cleanup Report
+Generated: Tue Jan  6 16:23:32 EST 2026
+========================================
+
+Repository Status:
+  Total files:   165362
+  Total directories:    26824
+  Repository size: 2.0G
+
+Configuration Files:
+  Terraform templates:        0
+  Example files:        1
+  Serverless configs:      143
+
+Package Files:
+  package.json files:     4103
+  requirements.txt files:       17
+
+Documentation:
+  Markdown files:     5812
+  Documentation directory: Missing

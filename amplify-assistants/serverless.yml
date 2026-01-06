@@ -8,10 +8,8 @@ package:
     - venv/**
 
 plugins:
-  - serverless-offline
   - serverless-python-requirements
   - serverless-prune-plugin
-  - serverless-cloudformation-changesets-v3
 custom:
   stageVars: ${file(../var/${self:provider.stage}-var.yml)} 
   stages:
@@ -66,7 +64,7 @@ provider:
     ASSISTANTS_ALIASES_DYNAMODB_TABLE: ${self:service}-${sls:stage}-assistant-aliases
     ASSISTANT_THREADS_DYNAMODB_TABLE: ${self:service}-${sls:stage}-assistant-threads
     ASSISTANT_THREAD_RUNS_DYNAMODB_TABLE: ${self:service}-${sls:stage}-assistant-thread-runs
-    ASSISTANTS_CODE_INTERPRETER_FILES_BUCKET_NAME: ${self:service}-${sls:stage}-code-interpreter-files
+    ASSISTANTS_CODE_INTERPRETER_FILES_BUCKET_NAME: ${self:service}-${sls:stage}-code-files-v2
     ASSISTANT_CODE_INTERPRETER_DYNAMODB_TABLE: ${self:service}-${sls:stage}-code-interpreter-assistants
     ASSISTANT_LAMBDA_MANAGED_POLICY: ${self:service}-${sls:stage}-managed-policy
     BILLING_DYNAMODB_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-chat-billing-${sls:stage}-additional-charges
@@ -80,7 +78,7 @@ provider:
     API_BASE_URL: https://${self:custom.stageVars.CUSTOM_API_DOMAIN}
     GROUP_ASSISTANT_CONVERSATIONS_DYNAMO_TABLE: ${self:service}-${sls:stage}-group-assistant-conversations
     GROUP_ASSISTANT_DASHBOARDS_DYNAMO_TABLE: ${self:service}-${sls:stage}-group-assistant-dashboards
-    S3_GROUP_ASSISTANT_CONVERSATIONS_BUCKET_NAME: ${self:service}-${sls:stage}-group-conversations-content
+    S3_GROUP_ASSISTANT_CONVERSATIONS_BUCKET_NAME: ${self:service}-${sls:stage}-group-content-v2
     IDP_PREFIX: ${self:custom.stageVars.IDP_PREFIX}
     ASSISTANT_LOOKUP_DYNAMODB_TABLE: ${self:service}-${sls:stage}-assistant-lookup
     OPS_DYNAMODB_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-lambda-ops-${sls:stage}-ops

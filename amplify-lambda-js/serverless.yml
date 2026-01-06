@@ -2,18 +2,10 @@ service: amplify-${self:custom.stageVars.DEP_NAME}-amplify-js
 frameworkVersion: '3'
 
 plugins:
-  - serverless-offline
   - serverless-prune-plugin 
-  - serverless-cloudformation-changesets-v3
 
 custom:
-  serverless-offline: 
-    custom:
-      config: ${file(../var/${self:provider.stage}-var.yml)} 
-  stageVars: ${file(../var/${self:provider.stage}-var.yml)} 
-
-  cf-changesets:
-    requireChangeSet: ${self:custom.stageVars.CHANGE_SET_BOOLEAN}
+  stageVars: ${file(../var/${self:provider.stage}-var.yml)}
 
   stages:
     - dev
@@ -28,11 +20,11 @@ custom:
 
 provider:
   name: aws
-  runtime: nodejs22.x
+  runtime: nodejs20.x
   stage: ${opt:stage, 'dev'}
   region: ${self:custom.stageVars.DEP_REGION}
   versionFunctions: false
-  logRetentionInDays: 365
+  logRetentionInDays: 1
   tracing:
     lambda: true
   apiGateway:
@@ -53,14 +45,14 @@ provider:
     COGNITO_CLIENT_ID: ${self:custom.stageVars.COGNITO_CLIENT_ID}
     HASH_FILES_DYNAMO_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-lambda-${sls:stage}-hash-files
     ASSISTANT_QUEUE_NAME: amplify-${self:custom.stageVars.DEP_NAME}-${self:service}-${sls:stage}-assistant-queue
-    ASSISTANT_TASK_RESULTS_BUCKET_NAME: amplify-${self:custom.stageVars.DEP_NAME}-${self:service}-${sls:stage}-ast-results
-    ASSISTANT_LOGS_BUCKET_NAME: amplify-${self:custom.stageVars.DEP_NAME}-${sls:stage}-assistant-chat-logs
+    ASSISTANT_TASK_RESULTS_BUCKET_NAME: amplify-${self:custom.stageVars.DEP_NAME}-${sls:stage}-ast-results-${self:custom.stageVars.AWS_ACCOUNT_ID}
+    ASSISTANT_LOGS_BUCKET_NAME: amplify-${self:custom.stageVars.DEP_NAME}-${sls:stage}-assistant-chat-logs-${self:custom.stageVars.AWS_ACCOUNT_ID}
     ASSISTANTS_ALIASES_DYNAMODB_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-assistants-${sls:stage}-assistant-aliases
     ASSISTANTS_DYNAMODB_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-assistants-${sls:stage}-assistants
     ASSISTANT_LOOKUP_DYNAMODB_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-assistants-${sls:stage}-assistant-lookup
     CHAT_USAGE_DYNAMO_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-lambda-${sls:stage}-chat-usage
     REQUEST_STATE_DYNAMO_TABLE: ${self:service}-${sls:stage}-request-state
-    TRACE_BUCKET_NAME: amplify-${self:custom.stageVars.DEP_NAME}-lambda-${sls:stage}-chat-traces
+    TRACE_BUCKET_NAME: amplify-${self:custom.stageVars.DEP_NAME}-lambda-${sls:stage}-chat-traces-${self:custom.stageVars.AWS_ACCOUNT_ID}
     TRACING_ENABLED: false
     API_KEYS_DYNAMODB_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-object-access-${sls:stage}-api-keys
     API_BASE_URL: https://${self:custom.stageVars.CUSTOM_API_DOMAIN}
@@ -70,7 +62,7 @@ provider:
     LAMBDA_JS_IAM_POLICY_NAME: ${self:service}-${sls:stage}-iam-policy
     GROUPS_DYNAMO_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-object-access-${sls:stage}-amplify-groups
     GROUP_ASSISTANT_CONVERSATIONS_DYNAMO_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-assistants-${sls:stage}-group-assistant-conversations
-    S3_GROUP_ASSISTANT_CONVERSATIONS_BUCKET_NAME: amplify-${self:custom.stageVars.DEP_NAME}-assistants-${sls:stage}-group-conversations-content
+    S3_GROUP_ASSISTANT_CONVERSATIONS_BUCKET_NAME: amplify-${self:custom.stageVars.DEP_NAME}-assistants-${sls:stage}-group-conversations-content-${self:custom.stageVars.AWS_ACCOUNT_ID}
     S3_IMAGE_INPUT_BUCKET_NAME: amplify-${self:custom.stageVars.DEP_NAME}-lambda-${sls:stage}-image-input
     IDP_PREFIX: ${self:custom.stageVars.IDP_PREFIX}
     ADMIN_DYNAMODB_TABLE: amplify-${self:custom.stageVars.DEP_NAME}-admin-${sls:stage}-admin-configs
@@ -80,14 +72,15 @@ provider:
     S3_RAG_INPUT_BUCKET_NAME: amplify-${self:custom.stageVars.DEP_NAME}-lambda-${sls:stage}-rag-input
     BEDROCK_GUARDRAIL_ID: ${self:custom.stageVars.BEDROCK_GUARDRAIL_ID, ''}
     BEDROCK_GUARDRAIL_VERSION: ${self:custom.stageVars.BEDROCK_GUARDRAIL_VERSION, ''}
+    BEDROCK_AGENT_ID: ${self:custom.stageVars.BEDROCK_AGENT_ID, '3RAM4VDCCU'}
+    BEDROCK_AGENT_ALIAS: ${self:custom.stageVars.BEDROCK_AGENT_ALIAS, 'ZE8JEFLFIU'}
+    BEDROCK_AGENT_REGION: ${self:custom.stageVars.BEDROCK_REGION, '${self:custom.stageVars.DEP_REGION}'}
     
   iam:
     role:
       managedPolicies:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - !Ref LambdaJSIAMPolicy
-        - !Ref BedrockIAMPolicy
-        #- arn:aws:iam::${aws:accountId}:policy/${self:provider.environment.LAMBDA_JS_IAM_POLICY_NAME}
 
 
 functions:
@@ -221,71 +214,31 @@ resources:
                 - sqs:GetQueueAttributes
                 - bedrock:InvokeModelWithResponseStream
                 - bedrock:InvokeModel
-              Resource:
-                - '${self:provider.environment.LLM_ENDPOINTS_SECRETS_NAME_ARN}'
-                - "arn:aws:secretsmanager:${aws:region}:*:secret:${self:provider.environment.SECRETS_ARN_NAME}*"
-                - "arn:aws:s3:::${self:provider.environment.S3_FILE_TEXT_BUCKET_NAME}/*"
-                - "arn:aws:s3:::${self:provider.environment.S3_IMAGE_INPUT_BUCKET_NAME}/*"
-                - "arn:aws:s3:::${self:provider.environment.TRACE_BUCKET_NAME}/*"
-                - "arn:aws:s3:::${self:provider.environment.ASSISTANT_TASK_RESULTS_BUCKET_NAME}/*"
-                - "arn:aws:s3:::${self:provider.environment.ASSISTANT_LOGS_BUCKET_NAME}/*"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.GROUPS_DYNAMO_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.GROUPS_DYNAMO_TABLE}/*"
-                - "arn:aws:s3:::${self:provider.environment.S3_GROUP_ASSISTANT_CONVERSATIONS_BUCKET_NAME}"
-                - "arn:aws:s3:::${self:provider.environment.S3_GROUP_ASSISTANT_CONVERSATIONS_BUCKET_NAME}/*"
-                - "arn:aws:sqs:${aws:region}:*:${self:provider.environment.ASSISTANT_QUEUE_NAME}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.CHAT_USAGE_DYNAMO_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.CHAT_USAGE_DYNAMO_TABLE}/*"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.API_KEYS_DYNAMODB_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.API_KEYS_DYNAMODB_TABLE}/*"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.REQUEST_STATE_DYNAMO_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.HASH_FILES_DYNAMO_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.COST_CALCULATIONS_DYNAMO_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.COST_CALCULATIONS_DYNAMO_TABLE}/*"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.HISTORY_COST_CALCULATIONS_DYNAMO_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.HISTORY_COST_CALCULATIONS_DYNAMO_TABLE}/*"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.MODEL_RATE_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.MODEL_RATE_TABLE}/*"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.GROUP_ASSISTANT_CONVERSATIONS_DYNAMO_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.GROUP_ASSISTANT_CONVERSATIONS_DYNAMO_TABLE}/*"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.ADMIN_DYNAMODB_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.AGENT_STATE_DYNAMODB_TABLE}"
-                - 'arn:aws:bedrock:*::foundation-model/*'
-                - "arn:aws:bedrock:*:${aws:accountId}:inference-profile/*"
+                - bedrock-agent-runtime:InvokeAgent
+              Resource: "*"
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
                 - dynamodb:Query
                 - dynamodb:Scan
-              Resource:
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.ASSISTANTS_ALIASES_DYNAMODB_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.ASSISTANTS_DYNAMODB_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.ASSISTANTS_DYNAMODB_TABLE}/index/*"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.AGENT_STATE_DYNAMODB_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.ASSISTANT_LOOKUP_DYNAMODB_TABLE}"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.ASSISTANT_LOOKUP_DYNAMODB_TABLE}/index/*"
+              Resource: "*"
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
-              Resource:
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.DATASOURCE_REGISTRY_DYNAMO_TABLE}"
+              Resource: "*"
             - Effect: Allow
               Action:
                 - dynamodb:DeleteItem
-              Resource:
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.REQUEST_STATE_DYNAMO_TABLE}"
+              Resource: "*"
             - Effect: Allow
               Action:
                 - s3:GetObject
-              Resource:
-                - "arn:aws:s3:::${self:provider.environment.S3_RAG_INPUT_BUCKET_NAME}/*"
+              Resource: "*"
             - Effect: Allow
               Action:
                 - bedrock:InvokeGuardrail
                 - bedrock:ApplyGuardrail
-              Resource:
-                - "arn:aws:bedrock:*:${aws:accountId}:guardrail/${self:provider.environment.BEDROCK_GUARDRAIL_ID, '*'}"
-                - "arn:aws:bedrock:*:${aws:accountId}:guardrail-profile/*"
+              Resource: "*"
     
     RequestStateDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
@@ -399,23 +352,9 @@ resources:
         Type: AWS::S3::Bucket
         Properties:
           BucketName: ${self:provider.environment.ASSISTANT_LOGS_BUCKET_NAME}
-    BedrockIAMPolicy:
-      Type: AWS::IAM::ManagedPolicy
-      Properties:
-        ManagedPolicyName: ${self:service}-${sls:stage}-bedrock-policy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - bedrock:InvokeModelWithResponseStream
-                - bedrock:InvokeModel
-              Resource:
-                - 'arn:aws:bedrock:*::foundation-model/*'
-                - !Sub arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/*
   Outputs:
-    BedrockIAMPolicyArn:
+    LambdaJSIAMPolicyArn:
       Value: 
-        Ref: BedrockIAMPolicy
+        Ref: LambdaJSIAMPolicy
       Export:
-        Name: ${self:service}-${sls:stage}-BedrockIAMPolicyArn
+        Name: ${self:service}-${sls:stage}-LambdaJSIAMPolicyArn

@@ -8,11 +8,9 @@ package:
     - venv/**
 
 plugins:
-  - serverless-offline
   - serverless-prune-plugin
   - serverless-deployment-bucket
   - serverless-python-requirements
-  - serverless-cloudformation-changesets-v3
 custom:
   pythonRequirements:
     dockerizePip: true
@@ -21,7 +19,6 @@ custom:
   cf-changesets:
     requireChangeSet: ${self:custom.stageVars.CHANGE_SET_BOOLEAN}
     
-  serverless-offline: 
     custom:
       config: ${file(../var/${self:provider.stage}-var.yml)}
 
@@ -47,7 +44,7 @@ provider:
   versionFunctions: false
   logRetentionInDays: 365
   deploymentBucket:
-    name: ${self:service}-${sls:stage}-deployment-bucket
+    name: ${self:service}-${sls:stage}-deployment-bucket-651868767172
     serverSideEncryption: AES256
   
   apiGateway:

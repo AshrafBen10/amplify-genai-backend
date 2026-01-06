@@ -8,10 +8,8 @@ package:
     - venv/**
 
 plugins:
-  - serverless-offline
   - serverless-python-requirements
   - serverless-prune-plugin
-  - serverless-cloudformation-changesets-v3
 custom:
   pythonRequirements:
     dockerizePip: true
@@ -133,7 +131,21 @@ resources:
                 - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.API_KEYS_DYNAMODB_TABLE}"
                 - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.ACCOUNTS_DYNAMO_TABLE}"
                 - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.API_KEYS_DYNAMODB_TABLE}/index/*"
-                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.ACCOUNTS_DYNAMO_TABLE}/index/*"  
+                - "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.ACCOUNTS_DYNAMO_TABLE}/index/*"
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeAgent
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - "arn:aws:secretsmanager:${aws:region}:*:secret:app_secrets*"
+                - "arn:aws:secretsmanager:${aws:region}:*:secret:app_envs*"
+                - "arn:aws:secretsmanager:${aws:region}:*:secret:openai_api_key*"
+                - "arn:aws:secretsmanager:${aws:region}:*:secret:openai_endpoints*"  
     OpsTable:
       Type: AWS::DynamoDB::Table
       Properties:

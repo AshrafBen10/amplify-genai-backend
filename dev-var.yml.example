@@ -1,0 +1,40 @@
+AWS_ACCOUNT_ID: "YOUR_AWS_ACCOUNT_ID"
+COGNITO_USER_POOL_ID: "YOUR_COGNITO_USER_POOL_ID"
+COGNITO_CLIENT_ID: "YOUR_COGNITO_CLIENT_ID"
+VPC_ID: "YOUR_VPC_ID"
+SUBNET_IDS:
+  - "YOUR_PRIVATE_SUBNET_1"
+  - "YOUR_PRIVATE_SUBNET_2"
+
+# Bedrock Agent Configuration - Production Settings
+BEDROCK_AGENT_ID: "YOUR_BEDROCK_AGENT_ID"
+BEDROCK_AGENT_ALIAS: "YOUR_BEDROCK_AGENT_ALIAS"
+BEDROCK_REGION: "us-east-1"
+BEDROCK_AGENT_SESSION_TTL: "3600"
+BEDROCK_AGENT_ENABLE_TRACE: "true"
+BEDROCK_AGENT_MAX_RETRIES: "3"
+
+# Deployment Configuration
+DEP_REGION: "us-east-1"
+DEP_NAME: "genai"
+CUSTOM_API_DOMAIN: "your-api-domain.example.com"
+
+# Security and Access Control
+ADMINS: "your-admin-username"
+ORGANIZATION_EMAIL_DOMAIN: "your-organization.com"
+IDP_PREFIX: "amplify-genai"
+
+# Secrets Configuration
+LLM_ENDPOINTS_SECRETS_NAME: "dev-bedrock-endpoints"
+LLM_ENDPOINTS_SECRETS_NAME_ARN: "arn:aws:secretsmanager:us-east-1:YOUR_AWS_ACCOUNT_ID:secret:dev-bedrock-endpoints"
+
+# Feature Flags
+CHANGE_SET_BOOLEAN: "true"
+AGENT_ENDPOINT: "https://your-api-gateway-url.execute-api.us-east-1.amazonaws.com/dev"
+
+VpcConfig:
+  SecurityGroupIds:
+    - YOUR_SECURITY_GROUP_ID  # ECS tasks security group
+  SubnetIds:
+    - YOUR_PRIVATE_SUBNET_1  # Private subnet 1
+    - YOUR_PRIVATE_SUBNET_2  # Private subnet 2

@@ -1,0 +1,75 @@
+service: amplify-${self:custom.stageVars.DEP_NAME}-amplify-js
+frameworkVersion: '3'
+
+plugins:
+  - serverless-prune-plugin 
+
+custom:
+  stageVars: ${file(../var/${self:provider.stage}-var.yml)}
+  stages:
+    - dev
+    - staging
+    - prod
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 3
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: ${opt:stage, 'dev'}
+  region: ${self:custom.stageVars.DEP_REGION}
+  versionFunctions: false
+  logRetentionInDays: 3
+  tracing:
+    lambda: true
+  apiGateway:
+    restApiId:
+      Fn::ImportValue: !Sub "${sls:stage}-RestApiId"
+    restApiRootResourceId:
+      Fn::ImportValue: !Sub "${sls:stage}-RestApiRootResourceId"   
+
+  environment:
+    LLM_ENDPOINTS_SECRETS_NAME_ARN: ${self:custom.stageVars.LLM_ENDPOINTS_SECRETS_NAME_ARN}
+    LLM_ENDPOINTS_SECRETS_NAME: ${self:custom.stageVars.LLM_ENDPOINTS_SECRETS_NAME}
+    SECRETS_ARN_NAME: ${sls:stage}-amplify-app-secrets
+    COGNITO_USER_POOL_ID: ${self:custom.stageVars.COGNITO_USER_POOL_ID}
+    COGNITO_CLIENT_ID: ${self:custom.stageVars.COGNITO_CLIENT_ID}
+    DEP_REGION: ${self:custom.stageVars.DEP_REGION} 
+    # Bedrock Agent Configuration
+    BEDROCK_AGENT_ID: ${self:custom.stageVars.BEDROCK_AGENT_ID, '3RAM4VDCCU'}
+    BEDROCK_AGENT_ALIAS: ${self:custom.stageVars.BEDROCK_AGENT_ALIAS, 'ZE8JEFLFIU'}
+    BEDROCK_AGENT_REGION: ${self:custom.stageVars.BEDROCK_REGION, '${self:custom.stageVars.DEP_REGION}'}
+    
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+            - bedrock:InvokeModelWithResponseStream
+            - bedrock:InvokeModel
+            - bedrock-agent-runtime:InvokeAgent
+          Resource: "*"
+
+functions:
+  chat:
+    handler: index.handler
+    memorySize: 1024
+    timeout: 900
+    tracing: Active
+    url:
+      cors: true
+      invokeMode: RESPONSE_STREAM
+
+resources:
+  Resources:
+    # Minimal resources only
+    ServerlessDeploymentBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
